@@ -81,8 +81,8 @@ public class AlarmActivity extends Service {
 					break;
 				}
 
-				mParams.x = mViewX + x;
-				mParams.y = mViewY + y;
+				mParams.x = mViewX +x;
+				mParams.y = mViewY +y;
 
 				mManager.updateViewLayout(mView, mParams);
 
