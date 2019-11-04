@@ -53,7 +53,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
 	static RelativeLayout layout;
 	static Button set_bt1, set_bt2, set_bt3, main_bt1, menu2_bt1, menu2_bt2, menu2_bt3, menu2_bt4, menu2_bt5, menu2_bt6;
 	static TextView set_tv1, main_tv1, main_tv2, main_tv3, main_tv4, main_tv5, main_tv6, menu1_tv1, loading_tv_1;
-	static EditText set_et1, set_et2, menu2_et1, menu2_et2, menu2_et3, menu2_et4;
+	static EditText set_et1, set_et2, menu2_et1, menu2_et2, menu2_et3,menu2_et4;
 
 	static Vibrator vibe;
 	Handler myHandler;
