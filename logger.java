@@ -22,7 +22,7 @@ public class logger {
 	TextView t;
 
 	public logger(TextView t) {
-		this.t = t;
+		this.t =t;
 		h = new Handler();
 	}
 
