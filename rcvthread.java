@@ -32,7 +32,7 @@ public class rcvthread implements Runnable {
 				rcvBufSize = socket.getInputStream().read(rcvBuf);
 				rcvData = new String(rcvBuf, 0, rcvBufSize, "UTF-8");
 
-				Log.e("read test!!!", "read : " + rcvData);
+				Log.e("read test!!!", "read : " +rcvData);
 
 			} catch (IOException e) {
 				e.printStackTrace();
