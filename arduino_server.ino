@@ -1,4 +1,3 @@
-# SmartWindow
 #include "Ethernet.h"
 #include "SPI.h"
 
@@ -16,12 +15,16 @@ unsigned long lastMillis;
 
 
 #include <Stepper.h>//스텝모터 라이브러리 사용
-const int stepsPerRevolution = 200;//200 스텝 = 1바퀴
+const int stepsPerRevolution = 160;//200 스텝 = 1바퀴
 Stepper myStepper(stepsPerRevolution, 30, 31, 32, 33);//창문에 쓰일 스텝모터 아두이노 30~33번핀 사용
-int set_step = 3;//창문 열고 닫는 회전수
+const int stepsPerlittle = 80;//200 스텝 = 1바퀴
+Stepper myStepperlittle(stepsPerlittle, 30, 31, 32, 33);//창문에 쓰일 스텝모터 아두이노 30~33번핀 사용
+int set_step = 2;//창문 열고 닫는 회전수
 int window_state = 0;//창문 현재 상태를 저장할 변수   0 = off, 1 = on
 
 int manual_automatic = 0;//창문 제어 수동 자동 설정값을 저장할 변수   0 = 수동, 1 = 자동
+
+
 
 //현재시간을 저장할 변수
 int real_time_h = 0;
@@ -42,6 +45,7 @@ int set_time_s2 = 0;
 int time_state = 0;
 
 
+// 미세먼지 관련 변수
 int measurePin = A0;
 int ledPower = 2;
 
@@ -153,15 +157,9 @@ void loop() {
     Serial.print("     manual_automatic: ");
     Serial.println(manual_automatic);
 
-    /*Serial.print("     Set H 1: "); Serial.print(set_time_h1);
-      Serial.print("     Set M 1: "); Serial.print(set_time_m1);
-      Serial.print("     Set S 1: "); Serial.print(set_time_s1);
-      Serial.print("     Set H 2: "); Serial.print(set_time_h2);
-      Serial.print("     Set M 2: "); Serial.print(set_time_m2);
-      Serial.print("     Set S 2: "); Serial.println(set_time_s2);*/
 
     // 실시간 데이터 전송을 위한 데이터꾸러미를 만들어둔다
-    // 데이터사이마다 /부호로 나누어둔다 (안드로이드에서 데이터 파싱을 쉽게하기위해)
+    // 데이터사이마다 /부호로 나누어둔다 
     send_data  = "@/";
     send_data = send_data + (temp);
     send_data = send_data + "/";
@@ -195,7 +193,9 @@ void loop() {
 
     } else {//만약 창문모드가 자동이라면
 
-      if (water_value >= 500) {//만약 빗물센서값이 500이거나 500보다크면
+        if (gas_value > 300) { //만약 가스센서값이 300보다크면
+        window_on(); //창문 ON
+      } else if (water_value >= 500) {//만약 빗물센서값이 500이거나 500보다크면
         window_off();//창문 OFF
       } else if (temp <= 21) {//만약 온도값이 21이거나 21보다 작으면
         window_off();//창문 OFF
@@ -204,6 +204,7 @@ void loop() {
       } else {//위의 3가지 모두 아니라면
         window_on();//창문 ON
       }
+      
 
     }
 
@@ -216,10 +217,10 @@ void loop() {
   char temp[100];
   client = server.available();                  // 클라이언트 선언
 
-  if (client) {                                 // 클라이언트가 있으면..
-    while (client.connected()) {                // 클라이언트가 연결 되면..
+  if (client) {                                 // 클라이언트가 있으면
+    while (client.connected()) {                // 클라이언트가 연결 되면
 
-      if (client.available()) {                 // 읽을 데이터가 있으면..
+      if (client.available()) {                 // 읽을 데이터가 있으면
         byte leng = client.readBytes(temp, 7);  // 데이터 읽기
 
         for (int i = 0; i < leng; i++) {
@@ -246,6 +247,28 @@ void loop() {
           } else if (read_data == "window0") {// 위와 같다
 
             window_off();
+            manual_automatic = 0;
+            set_time_h1 = 0;
+            set_time_m1 = 0;
+            set_time_s1 = 0;
+            set_time_h2 = 0;
+            set_time_m2 = 0;
+            set_time_s2 = 0;
+
+           } else if (read_data == "window3") {//수신받은 데이터가 window1 라면
+
+            windowlittle_on();//창문 여는 함수를 실행하고
+            manual_automatic = 0;//창문 모드는 수동으로 하고
+            set_time_h1 = 0;//예약시간을 초기화 한다
+            set_time_m1 = 0;
+            set_time_s1 = 0;
+            set_time_h2 = 0;
+            set_time_m2 = 0;
+            set_time_s2 = 0;
+
+          } else if (read_data == "window2") {// 위와 같다
+
+            windowlittle_off();
             manual_automatic = 0;
             set_time_h1 = 0;
             set_time_m1 = 0;
@@ -334,7 +357,7 @@ void window_on() {//창문 ON 함수
     window_state = 1;//window_state 변수값 1 변경
 
     for (int i = 0; i < set_step; i++) {
-      myStepper.step(-stepsPerRevolution);
+      myStepper.step(stepsPerRevolution);
     }
   }
   digitalWrite(30, LOW);
@@ -348,7 +371,36 @@ void window_off() {//창문 OFF 함수
     window_state = 0;
 
     for (int i = 0; i < set_step; i++) {
-      myStepper.step(stepsPerRevolution);
+      myStepper.step(-stepsPerRevolution);
+    }
+  }
+  digitalWrite(30, LOW);
+  digitalWrite(31, LOW);
+  digitalWrite(32, LOW);
+  digitalWrite(33, LOW);
+}
+
+//코드추가부분
+void windowlittle_on() {//창문 ON 함수
+  if (window_state != 3) {//window_state 변수값 3 아니면
+    window_state = 3;//window_state 변수값 3 변경
+
+    for (int i = 0; i < set_step; i++) {
+      myStepper.step(stepsPerlittle);
+    }
+  }
+  digitalWrite(30, LOW);
+  digitalWrite(31, LOW);
+  digitalWrite(32, LOW);
+  digitalWrite(33, LOW);
+}
+
+void windowlittle_off() {//창문 OFF 함수
+  if (window_state != 2) {
+    window_state = 2;
+
+    for (int i = 0; i < set_step; i++) {
+      myStepper.step(-stepsPerlittle);
     }
   }
   digitalWrite(30, LOW);
